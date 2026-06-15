@@ -64,6 +64,35 @@
       "yellow_home": 0,
       "yellow_away": 1,
       "yellows": 1
+    },
+    "10": {
+      "home": 7,
+      "away": 1,
+      "status": "finished"
+    },
+    "11": {
+      "home": 2,
+      "away": 2,
+      "status": "finished",
+      "yellow_home": 3,
+      "yellow_away": 0,
+      "yellows": 3
+    },
+    "9": {
+      "home": 1,
+      "away": 0,
+      "status": "finished",
+      "yellow_home": 3,
+      "yellow_away": 1,
+      "yellows": 4
+    },
+    "12": {
+      "home": 5,
+      "away": 1,
+      "status": "finished",
+      "yellow_home": 0,
+      "yellow_away": 1,
+      "yellows": 1
     }
   }
 }

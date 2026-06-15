@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ЧМ-2026 — Longshot</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">⚽</span>
+        <div>
+          <h1>ЧМ-2026 Longshot</h1>
+          <p>Сценарная тактика для редких ставок с коэффициентом от 4.0</p>
+        </div>
+      </div>
+      <nav class="tabs">
+        <a class="section-link" href="/">+EV ставки</a>
+        <a class="section-link" href="/market">Маркет-модель</a>
+        <button class="tab active" data-longshot-view="forecasts">Прогнозы <span class="badge" id="longshot-badge">0</span></button>
+        <button class="tab" data-longshot-view="retro">Сыгранные <span class="badge" id="longshot-retro-badge">0</span></button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="longshot-view-forecasts" class="panel active">
+      <div class="stats-row" id="longshot-stats-row"></div>
+
+      <div class="controls card risky-controls">
+        <div class="field">
+          <label for="longshot-date-select">Дата</label>
+          <select id="longshot-date-select">
+            <option value="">Все даты</option>
+            {% for d in dates %}
+            <option value="{{ d }}" {% if d == default_date %}selected{% endif %}>{{ d }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field field-narrow">
+          <label for="longshot-include-finished">Сыгранные</label>
+          <select id="longshot-include-finished">
+            <option value="0">Скрыть</option>
+            <option value="1">Показать</option>
+          </select>
+        </div>
+        <div class="field field-actions">
+          <button class="btn" id="btn-longshot-refresh">Обновить</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="longshot-cards" class="archive-cards longshot-cards"></div>
+        <div id="longshot-empty" class="empty hidden">
+          <p id="longshot-empty-text">Нет longshot-кандидатов для выбранных фильтров.</p>
+        </div>
+      </div>
+
+      <div class="card hint-card">
+        <p><strong>Longshot overlay</strong> берёт только реальные коэффициенты из архива, усиливает сценарии ничьих, апсетов, разгромов и фор, затем оставляет максимум один исход на матч при кефе <strong>≥ 4.0</strong>, вероятности ≥ 13.5% и достаточном scenario quality. Отдельная БД: <code>data/longshot_predictions.db</code>.</p>
+      </div>
+    </section>
+
+    <section id="longshot-view-retro" class="panel">
+      <div class="stats-row" id="longshot-retro-stats-row"></div>
+
+      <div class="card">
+        <h3 class="section-title">Проверка longshot-тактики на сыгранных матчах ЧМ-2026</h3>
+        <div id="longshot-retro-cards" class="risky-retro-grid"></div>
+        <div id="longshot-retro-empty" class="empty hidden">
+          <p>Сыгранных матчей с longshot-кандидатами пока нет.</p>
+        </div>
+      </div>
+    </section>
+
+    <div id="longshot-modal" class="modal hidden" aria-hidden="true">
+      <div class="modal-backdrop" id="longshot-modal-backdrop"></div>
+      <div class="modal-dialog card" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <div>
+            <h3 id="longshot-modal-title"></h3>
+            <p class="modal-meta" id="longshot-modal-meta"></p>
+          </div>
+          <button type="button" class="btn danger small" id="longshot-modal-close" aria-label="Закрыть">×</button>
+        </div>
+        <div class="modal-body" id="longshot-modal-body"></div>
+      </div>
+    </div>
+  </main>
+
+  <div id="bet-toast" class="toast toast-fixed hidden"></div>
+
+  <script>
+    window.LONGSHOT_DEFAULT_DATE = {{ default_date | tojson }};
+    window.LONGSHOT_BOOT = {{ longshot_boot | tojson }};
+    window.LONGSHOT_RETRO = {{ longshot_retro | tojson }};
+  </script>
+  <script src="/static/js/longshot.js?v=1"></script>
+</body>
+</html>

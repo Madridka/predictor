@@ -26,6 +26,18 @@ from wc2026.data_loader import load_matches
 from wc2026.odds_loader import get_default_stake
 from wc2026.results_fetcher import fetch_and_merge_results
 from wc2026.risky_scan import scan_positive_ev_picks, scan_retrospective_risky
+from wc2026.market_section import (
+    ensure_market_forecasts,
+    list_market_forecast_cards,
+    market_retrospective,
+)
+from wc2026.market_store import init_market_db
+from wc2026.longshot_section import (
+    ensure_longshot_forecasts,
+    list_longshot_cards,
+    longshot_retrospective,
+)
+from wc2026.longshot_store import init_longshot_db
 
 app = Flask(
     __name__,
@@ -37,6 +49,8 @@ app = Flask(
 @app.before_request
 def _init_once():
     init_bets_db()
+    init_market_db()
+    init_longshot_db()
 
 
 @app.get("/")
@@ -57,6 +71,108 @@ def index():
         default_stake=get_default_stake(),
         risky_boot=risky_boot,
         risky_retro=risky_retro,
+    )
+
+
+@app.get("/market")
+def market_index():
+    from wc2026.data_loader import load_matches as _load
+
+    ensure_market_forecasts()
+    dates = sorted({m.date for m in _load()})
+    today = date_type.today().isoformat()
+    default_date = today if today in dates else (dates[0] if dates else "")
+
+    market_boot = list_market_forecast_cards(date=default_date or None)
+    market_retro = market_retrospective()
+
+    return render_template(
+        "market.html",
+        dates=dates,
+        default_date=default_date,
+        market_boot=market_boot,
+        market_retro=market_retro,
+    )
+
+
+@app.get("/longshot")
+def longshot_index():
+    from wc2026.data_loader import load_matches as _load
+
+    ensure_longshot_forecasts()
+    dates = sorted({m.date for m in _load()})
+    today = date_type.today().isoformat()
+    default_date = today if today in dates else (dates[0] if dates else "")
+
+    longshot_boot = list_longshot_cards(date=default_date or None)
+    longshot_retro = longshot_retrospective()
+
+    return render_template(
+        "longshot.html",
+        dates=dates,
+        default_date=default_date,
+        longshot_boot=longshot_boot,
+        longshot_retro=longshot_retro,
+    )
+
+
+@app.get("/longshot/data/forecasts")
+def api_longshot_forecasts():
+    ensure_longshot_forecasts()
+    date = request.args.get("date") or None
+    include_finished = request.args.get("include_finished", "0") == "1"
+    return jsonify(
+        list_longshot_cards(
+            date=date,
+            include_finished=include_finished,
+        )
+    )
+
+
+@app.get("/longshot/data/retrospective")
+def api_longshot_retrospective():
+    ensure_longshot_forecasts()
+    return jsonify(longshot_retrospective())
+
+
+@app.post("/longshot/data/sync")
+def api_longshot_sync():
+    ensure_longshot_forecasts()
+    return jsonify(
+        {
+            "forecasts": list_longshot_cards(include_finished=True),
+            "retrospective": longshot_retrospective(),
+        }
+    )
+
+
+@app.get("/market/data/forecasts")
+def api_market_forecasts():
+    ensure_market_forecasts()
+    date = request.args.get("date") or None
+    include_finished = request.args.get("include_finished", "0") == "1"
+    return jsonify(
+        list_market_forecast_cards(
+            date=date,
+            include_finished=include_finished,
+        )
+    )
+
+
+@app.get("/market/data/retrospective")
+def api_market_retrospective():
+    ensure_market_forecasts()
+    return jsonify(market_retrospective())
+
+
+@app.post("/market/data/sync")
+def api_market_sync():
+    ensure_market_forecasts()
+    return jsonify(
+        {
+            "forecasts": list_market_forecast_cards(include_finished=True),
+            "retrospective": market_retrospective(),
+        }
     )
 
 
@@ -181,5 +297,7 @@ def api_risky_retrospective():
 
 if __name__ == "__main__":
     init_bets_db()
+    init_market_db()
+    init_longshot_db()
     print("WC2026 +EV: http://127.0.0.1:5000")
     app.run(debug=True, host="127.0.0.1", port=5000)

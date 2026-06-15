@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ЧМ-2026 — маркет-модель</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">⚽</span>
+        <div>
+          <h1>ЧМ-2026 Market</h1>
+          <p>Отдельный раздел · bookmaker-implied модель без Dixon-Coles и Elo</p>
+        </div>
+      </div>
+      <nav class="tabs">
+        <a class="section-link" href="/">+EV ставки</a>
+        <a class="section-link" href="/longshot">Longshot</a>
+        <button class="tab active" data-market-view="forecasts">Прогнозы <span class="badge" id="market-badge">0</span></button>
+        <button class="tab" data-market-view="retro">Сыгранные <span class="badge" id="market-retro-badge">0</span></button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="market-view-forecasts" class="panel active">
+      <div class="stats-row" id="market-stats-row"></div>
+
+      <div class="controls card risky-controls">
+        <div class="field">
+          <label for="market-date-select">Дата</label>
+          <select id="market-date-select">
+            <option value="">Все даты</option>
+            {% for d in dates %}
+            <option value="{{ d }}" {% if d == default_date %}selected{% endif %}>{{ d }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field field-narrow">
+          <label for="market-include-finished">Сыгранные</label>
+          <select id="market-include-finished">
+            <option value="0">Скрыть</option>
+            <option value="1">Показать</option>
+          </select>
+        </div>
+        <div class="field field-actions">
+          <button class="btn" id="btn-market-refresh">Обновить</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="market-cards" class="archive-cards market-cards"></div>
+        <div id="market-empty" class="empty hidden">
+          <p id="market-empty-text">Нет прогнозов для выбранных фильтров.</p>
+        </div>
+      </div>
+
+      <div class="card hint-card">
+        <p><strong>Market-модель</strong> снимает маржу с букмекерских 1X2, тоталов, ОЗ и фор, подбирает ожидаемый тотал голов из линии 2.5 и строит независимую голевую сетку. Это отдельная схема расчёта и отдельная БД: <code>data/market_predictions.db</code>.</p>
+      </div>
+    </section>
+
+    <section id="market-view-retro" class="panel">
+      <div class="stats-row" id="market-retro-stats-row"></div>
+
+      <div class="card">
+        <h3 class="section-title">Применение market-модели к сыгранным матчам ЧМ-2026</h3>
+        <div id="market-retro-cards" class="risky-retro-grid"></div>
+        <div id="market-retro-empty" class="empty hidden">
+          <p>Сыгранных матчей с расчётом market-модели пока нет.</p>
+        </div>
+      </div>
+    </section>
+
+    <div id="market-modal" class="modal hidden" aria-hidden="true">
+      <div class="modal-backdrop" id="market-modal-backdrop"></div>
+      <div class="modal-dialog card" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <div>
+            <h3 id="market-modal-title"></h3>
+            <p class="modal-meta" id="market-modal-meta"></p>
+          </div>
+          <button type="button" class="btn danger small" id="market-modal-close" aria-label="Закрыть">×</button>
+        </div>
+        <div class="modal-body" id="market-modal-body"></div>
+      </div>
+    </div>
+  </main>
+
+  <div id="bet-toast" class="toast toast-fixed hidden"></div>
+
+  <script>
+    window.MARKET_DEFAULT_DATE = {{ default_date | tojson }};
+    window.MARKET_BOOT = {{ market_boot | tojson }};
+    window.MARKET_RETRO = {{ market_retro | tojson }};
+  </script>
+  <script src="/static/js/market.js?v=1"></script>
+</body>
+</html>
