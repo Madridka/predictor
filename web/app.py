@@ -23,6 +23,7 @@ from wc2026.bets_store import (
     update_guess,
 )
 from wc2026.data_loader import load_matches
+from wc2026.draws_model import calculate_draw_strategy
 from wc2026.odds_loader import get_default_stake
 from wc2026.results_fetcher import fetch_and_merge_results
 from wc2026.risky_scan import scan_positive_ev_picks, scan_retrospective_risky
@@ -63,6 +64,7 @@ def index():
 
     risky_boot = scan_positive_ev_picks(date=default_date or None)
     risky_retro = scan_retrospective_risky()
+    draws_boot = calculate_draw_strategy(stake=get_default_stake())
 
     return render_template(
         "index.html",
@@ -71,6 +73,7 @@ def index():
         default_stake=get_default_stake(),
         risky_boot=risky_boot,
         risky_retro=risky_retro,
+        draws_boot=draws_boot,
     )
 
 
@@ -184,6 +187,14 @@ def api_bets_list():
             "stats": get_bet_stats(is_risky=True),
         }
     )
+
+
+@app.get("/data/draws")
+def api_draws_list():
+    stake = request.args.get("stake", type=float, default=get_default_stake())
+    if stake <= 0:
+        stake = get_default_stake()
+    return jsonify(calculate_draw_strategy(stake=stake))
 
 
 @app.post("/data/bets")

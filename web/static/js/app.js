@@ -80,6 +80,19 @@ async function refreshBetsBadge() {
   } catch (_) {}
 }
 
+async function refreshDrawsBadge() {
+  try {
+    const { stats } = await api("/data/draws");
+    const badge = $("#draws-badge");
+    if (badge) badge.textContent = stats.matches || 0;
+  } catch (_) {
+    if (window.DRAWS_BOOT?.stats) {
+      const badge = $("#draws-badge");
+      if (badge) badge.textContent = window.DRAWS_BOOT.stats.matches || 0;
+    }
+  }
+}
+
 async function loadRisky() {
   const minOdds = getRiskyMinOdds();
   const minEv = getRiskyMinEv();
@@ -101,6 +114,91 @@ async function loadRisky() {
     }
     renderRiskyError(err.message || "Ошибка загрузки");
   }
+}
+
+function money(v) {
+  if (v == null) return "—";
+  const n = Number(v);
+  const sign = n > 0 ? "+" : "";
+  return `${sign}${n.toFixed(2).replace(".00", "")} ₽`;
+}
+
+async function loadDraws() {
+  try {
+    const data = await api("/data/draws");
+    renderDrawsData(data);
+  } catch (err) {
+    if (window.DRAWS_BOOT) {
+      renderDrawsData(window.DRAWS_BOOT);
+      return;
+    }
+    $("#draws-stats-row").innerHTML = "";
+    $("#draws-tbody").innerHTML = "";
+    $("#draws-empty")?.classList.remove("hidden");
+    showToast(err.message || "Ошибка загрузки ничьих");
+  }
+}
+
+function renderDrawsData(data) {
+  renderDrawStats(data.stats);
+  renderDrawsTable(data.rows || []);
+  const badge = $("#draws-badge");
+  if (badge) badge.textContent = data.stats?.matches || 0;
+}
+
+function renderDrawStats(s) {
+  const profitClass = s.profit >= 0 ? "profit-pos" : "profit-neg";
+  $("#draws-stats-row").innerHTML = [
+    ["Матчей", s.matches],
+    ["Ничьих", s.draws],
+    ["Ставка", `${s.stake} ₽`],
+    ["Поставлено", `${s.total_staked} ₽`],
+    ["Возврат", money(s.total_return).replace("+", "")],
+    ["ROI", s.roi != null ? `${s.roi}%` : "—"],
+    ["Банк", money(s.bank)],
+  ]
+    .map(
+      ([lbl, val], i) => `
+    <div class="stat-card ${i === 6 ? profitClass : ""}">
+      <div class="val">${val}</div><div class="lbl">${lbl}</div>
+    </div>`
+    )
+    .join("");
+}
+
+function renderDrawsTable(rows) {
+  const tbody = $("#draws-tbody");
+  const empty = $("#draws-empty");
+  const table = $("#draws-table");
+
+  if (!rows.length) {
+    tbody.innerHTML = "";
+    table.classList.add("hidden");
+    empty.classList.remove("hidden");
+    return;
+  }
+
+  table.classList.remove("hidden");
+  empty.classList.add("hidden");
+  tbody.innerHTML = rows
+    .map((row) => {
+      const statusClass = row.status === "won" ? "won" : "lost";
+      const plClass = row.profit >= 0 ? "profit-pos" : "profit-neg";
+      const bankClass = row.bank >= 0 ? "profit-pos" : "profit-neg";
+      return `
+      <tr class="bet-row draw-row ${statusClass}">
+        <td>${row.row_num}</td>
+        <td>${formatDateShort(row.match_date)}</td>
+        <td class="match-cell">${row.home_name}<br><span class="vs">vs</span> ${row.away_name}</td>
+        <td><span class="result-score">${row.result_score}</span></td>
+        <td><strong>${row.odds.toFixed(2)}</strong></td>
+        <td>${row.stake} ₽</td>
+        <td>${row.payout ? money(row.payout).replace("+", "") : "—"}</td>
+        <td class="${plClass}"><strong>${money(row.profit)}</strong></td>
+        <td class="${bankClass}"><strong>${money(row.bank)}</strong></td>
+      </tr>`;
+    })
+    .join("");
 }
 
 function renderRiskyData(data, dateFilter) {
@@ -491,6 +589,7 @@ function bindEvents() {
       btn.classList.add("active");
       $(`#tab-${btn.dataset.tab}`).classList.add("active");
       if (btn.dataset.tab === "bets") loadBets();
+      if (btn.dataset.tab === "draws") loadDraws();
       if (btn.dataset.tab === "risky") loadRisky();
     });
   });
@@ -499,6 +598,7 @@ function bindEvents() {
   $("#risky-date-select")?.addEventListener("change", () => loadRisky());
   $("#risky-min-odds")?.addEventListener("change", () => loadRisky());
   $("#risky-min-ev")?.addEventListener("change", () => loadRisky());
+  $("#btn-refresh-draws")?.addEventListener("click", () => loadDraws());
   $("#btn-refresh-bets")?.addEventListener("click", () => loadBets(true));
   $("#risky-modal-close")?.addEventListener("click", closeRiskyModal);
   $("#risky-modal-backdrop")?.addEventListener("click", closeRiskyModal);
@@ -512,7 +612,9 @@ function init() {
     renderRiskyData(window.RISKY_BOOT, window.WC2026_DEFAULT_DATE || "");
   }
   if (window.RISKY_RETRO) renderRiskyRetroFromData(window.RISKY_RETRO);
+  if (window.DRAWS_BOOT) renderDrawsData(window.DRAWS_BOOT);
   refreshRiskyBadge().catch(() => {});
+  refreshDrawsBadge().catch(() => {});
   refreshBetsBadge().catch(() => {});
   bindEvents();
 }

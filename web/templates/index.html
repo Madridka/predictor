@@ -18,6 +18,7 @@
       </div>
       <nav class="tabs">
         <button class="tab active" data-tab="risky">+EV <span class="badge" id="risky-badge">0</span></button>
+        <button class="tab" data-tab="draws">НИЧЬИ <span class="badge" id="draws-badge">0</span></button>
         <button class="tab" data-tab="bets">Ставки <span class="badge" id="bets-badge">0</span></button>
         <a class="section-link" href="/market">Маркет-модель</a>
         <a class="section-link" href="/longshot">Longshot</a>
@@ -93,6 +94,41 @@
       </div>
     </div>
 
+    <section id="tab-draws" class="panel">
+      <div class="stats-row" id="draws-stats-row"></div>
+
+      <div class="card">
+        <div class="table-toolbar">
+          <div>
+            <h3>НИЧЬИ</h3>
+            <p class="table-subtitle">500 ₽ на ничью в каждом завершённом матче с первого тура до сегодня</p>
+          </div>
+          <button class="btn secondary small" id="btn-refresh-draws">Обновить таблицу</button>
+        </div>
+        <div class="table-wrap">
+          <table class="bets-table draws-table" id="draws-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Дата</th>
+                <th>Матч</th>
+                <th>Счёт</th>
+                <th>Кеф X</th>
+                <th>Ставка</th>
+                <th>Выплата</th>
+                <th>P/L</th>
+                <th>Банк</th>
+              </tr>
+            </thead>
+            <tbody id="draws-tbody"></tbody>
+          </table>
+        </div>
+        <div id="draws-empty" class="empty hidden">
+          <p>Нет завершённых матчей для расчёта стратегии ничьих.</p>
+        </div>
+      </div>
+    </section>
+
     <section id="tab-bets" class="panel">
       <div class="stats-row" id="stats-row"></div>
 
@@ -139,7 +175,8 @@
     window.DEFAULT_STAKE = {{ default_stake }};
     window.RISKY_BOOT = {{ risky_boot | tojson }};
     window.RISKY_RETRO = {{ risky_retro | tojson }};
+    window.DRAWS_BOOT = {{ draws_boot | tojson }};
   </script>
-  <script src="/static/js/app.js?v=27"></script>
+  <script src="/static/js/app.js?v=28"></script>
 </body>
 </html>
